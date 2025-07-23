@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"solution.cocofhu.com","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.18.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":true,"style":"mac"},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="WireGuard是一个易于配置、快速、安全的基于UDP协议的开源VPN软件。WireGuard具有自定义配置路由转发的能力，所以可以被用来在多个不同地域将设备所在的内网网络通过路由转发的方式串通起来，组建一张属于自己的大内网。   通过使用WireGuard组建一个大内网（类似于腾讯的iOA），可以让小伙伴们加入同一个内网， 局域网联机开黑。   本文将介绍如何使用lighthouse+Wir">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用WireGuard+Lighthouse实现异地组网">
+<meta property="og:url" content="http://solution.cocofhu.com/2025/04/29/%E4%BD%BF%E7%94%A8WireGuard+Lighthouse%E5%AE%9E%E7%8E%B0%E5%BC%82%E5%9C%B0%E7%BB%84%E7%BD%91/index.html">
+<meta property="og:site_name" content="八奈见杏菜">
+<meta property="og:description" content="WireGuard是一个易于配置、快速、安全的基于UDP协议的开源VPN软件。WireGuard具有自定义配置路由转发的能力，所以可以被用来在多个不同地域将设备所在的内网网络通过路由转发的方式串通起来，组建一张属于自己的大内网。   通过使用WireGuard组建一个大内网（类似于腾讯的iOA），可以让小伙伴们加入同一个内网， 局域网联机开黑。   本文将介绍如何使用lighthouse+Wir">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-04-29T23:49:34.000Z">
+<meta property="article:modified_time" content="2025-07-23T11:31:15.959Z">
+<meta property="article:author" content="cocofhu">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://solution.cocofhu.com/2025/04/29/%E4%BD%BF%E7%94%A8WireGuard+Lighthouse%E5%AE%9E%E7%8E%B0%E5%BC%82%E5%9C%B0%E7%BB%84%E7%BD%91/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://solution.cocofhu.com/2025/04/29/%E4%BD%BF%E7%94%A8WireGuard+Lighthouse%E5%AE%9E%E7%8E%B0%E5%BC%82%E5%9C%B0%E7%BB%84%E7%BD%91/","path":"2025/04/29/使用WireGuard+Lighthouse实现异地组网/","title":"使用WireGuard+Lighthouse实现异地组网"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>使用WireGuard+Lighthouse实现异地组网 | 八奈见杏菜</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">八奈见杏菜</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">糕糕糕手</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E5%AE%89%E8%A3%85WireGuard"><span class="nav-number">1.</span> <span class="nav-text">一、安装WireGuard</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E7%94%9F%E6%88%90%E5%85%AC%E9%92%A5%E5%92%8C%E7%A7%81%E9%92%A5"><span class="nav-number">2.</span> <span class="nav-text">二、生成公钥和私钥</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E7%BC%96%E5%86%99%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="nav-number">3.</span> <span class="nav-text">三、编写服务器的配置文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E5%90%AF%E5%8A%A8%E6%9C%8D%E5%8A%A1"><span class="nav-number">4.</span> <span class="nav-text">四、启动服务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E9%85%8D%E7%BD%AE%E5%AE%A2%E6%88%B7%E7%AB%AF"><span class="nav-number">5.</span> <span class="nav-text">五、配置客户端</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E6%B5%8B%E8%AF%95"><span class="nav-number">6.</span> <span class="nav-text">六、测试</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E5%BC%80%E5%90%AF%E7%BD%91%E5%8D%A1%E8%BD%AC%E5%8F%91%E5%AE%9E%E7%8E%B0%E8%B7%B3%E6%9D%BF%E6%9C%BA%E7%9B%B8%E5%85%B3%E5%8A%9F%E8%83%BD"><span class="nav-number">7.</span> <span class="nav-text">七、开启网卡转发实现跳板机相关功能</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%AB%E3%80%81%E6%9B%B4%E5%A4%9A%E7%94%A8%E6%88%B7%E6%8E%A5%E5%85%A5%E5%BC%80%E9%BB%91"><span class="nav-number">8.</span> <span class="nav-text">八、更多用户接入开黑</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B9%9D%E3%80%81Troubleshooting"><span class="nav-number">9.</span> <span class="nav-text">九、Troubleshooting</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1%E3%80%81%E5%A4%A7%E6%96%87%E4%BB%B6%E4%BC%A0%E8%BE%93%E5%A4%B1%E8%B4%A5%E3%80%81%E5%BB%B6%E8%BF%9F%E5%B7%A8%E9%AB%98%EF%BC%8C%E4%B8%A2%E5%8C%85%E4%B8%A5%E9%87%8D"><span class="nav-number">9.1.</span> <span class="nav-text">1、大文件传输失败、延迟巨高，丢包严重</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2%E3%80%81%E8%BF%9E%E6%8E%A5%E4%B8%8D%E4%B8%8A"><span class="nav-number">9.2.</span> <span class="nav-text">2、连接不上</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">cocofhu</p>
+  <div class="site-description" itemprop="description">顶尖糕糕糕糕糕糕手</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">3</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/cocofhu" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;cocofhu" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:cocofhu@outlook.com" title="E-Mail → mailto:cocofhu@outlook.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://solution.cocofhu.com/2025/04/29/%E4%BD%BF%E7%94%A8WireGuard+Lighthouse%E5%AE%9E%E7%8E%B0%E5%BC%82%E5%9C%B0%E7%BB%84%E7%BD%91/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="cocofhu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="八奈见杏菜">
+      <meta itemprop="description" content="顶尖糕糕糕糕糕糕手">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="使用WireGuard+Lighthouse实现异地组网 | 八奈见杏菜">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          使用WireGuard+Lighthouse实现异地组网
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025-04-29 23:49:34" itemprop="dateCreated datePublished" datetime="2025-04-29T23:49:34+00:00">2025-04-29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-07-23 11:31:15" itemprop="dateModified" datetime="2025-07-23T11:31:15+00:00">2025-07-23</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><blockquote>
+<p>WireGuard是一个易于配置、快速、安全的基于UDP协议的开源VPN软件。WireGuard具有自定义配置路由转发的能力，所以可以被用来在多个不同地域将设备所在的内网网络通过路由转发的方式串通起来，组建一张属于自己的大内网。</p>
+</blockquote>
+<blockquote>
+<p>通过使用WireGuard组建一个大内网（类似于腾讯的iOA），可以让小伙伴们加入同一个内网， 局域网联机开黑。</p>
+</blockquote>
+<blockquote>
+<p>本文将介绍如何使用lighthouse+WireGuard，通过lighthouse作为跳板机登陆到家庭内网，并和不同地域的伙伴局域网联机。</p>
+</blockquote>
+<h3 id="一、安装WireGuard"><a href="#一、安装WireGuard" class="headerlink" title="一、安装WireGuard"></a>一、安装WireGuard</h3><p>在腾讯云购买200M的轻量服务器，选择ubuntu镜像，登陆到系统，执行如下命令安装WireGuard和开启转发：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">apt install wireguard -y</span><br><span class="line">echo &quot;net.ipv4.ip_forward = 1&quot; &gt;&gt; /etc/sysctl.conf</span><br><span class="line">sysctl -p</span><br></pre></td></tr></table></figure>
+
+<h3 id="二、生成公钥和私钥"><a href="#二、生成公钥和私钥" class="headerlink" title="二、生成公钥和私钥"></a>二、生成公钥和私钥</h3><p>由于WireGuard需要加密连接，所以我们要先生成相关密钥，为了处理方便，我这里吧所有的文件都放在了<code>/etc/wireguard/</code>，也就是WireGuard的默认配置路径：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">进入路径，并设置权限，权限过高启动的时候有warning</span></span><br><span class="line">cd /etc/wireguard/</span><br><span class="line">chmod 077 /etc/wireguard</span><br><span class="line">umask 077</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">生成服务器公钥和私钥</span></span><br><span class="line">wg genkey &gt; server.key</span><br><span class="line">wg pubkey &lt; server.key &gt; server.key.pub</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">生成客户端公钥和私钥</span></span><br><span class="line">wg genkey &gt; client1.key</span><br><span class="line">wg pubkey &lt; client1.key &gt; client1.key.pub</span><br></pre></td></tr></table></figure>
+
+<p>执行上述脚本后我们将得到如下四个文件：</p>
+<ul>
+<li>server.key 服务器的私钥</li>
+<li>server.key.pub 服务器的公钥</li>
+<li>client1.key 客户端1的私钥</li>
+<li>client1.key.pub 客户端1的公钥</li>
+</ul>
+<p>如果有更多的客户端需要接入、可以生成更多的client。</p>
+<h3 id="三、编写服务器的配置文件"><a href="#三、编写服务器的配置文件" class="headerlink" title="三、编写服务器的配置文件"></a>三、编写服务器的配置文件</h3><p>我们在<code>/etc/wireguard/</code>下创建一个<code>wg0.conf</code>文件：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">[Interface]</span><br><span class="line">PrivateKey = xxx </span><br><span class="line">Address = 10.5.1.1 </span><br><span class="line"></span><br><span class="line">PostUp   = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -A FORWARD -o wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE</span><br><span class="line">PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -D FORWARD -o wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">ListenPort = 50814 </span><br><span class="line">MTU = 820</span><br><span class="line">[Peer]</span><br><span class="line">PublicKey =  xxxx</span><br><span class="line">AllowedIPs = 10.5.1.11/32,192.168.2.0/24</span><br><span class="line"></span><br><span class="line">[Peer]</span><br><span class="line">PublicKey =  xxxx</span><br><span class="line">AllowedIPs = 10.5.1.12/32</span><br></pre></td></tr></table></figure>
+<p>在第二行和第三行中，我们需要配置服务器的私钥（这里使用server.key里面的内容）和IP（使用自己喜欢的IP，PS：五一放假了）。<br>然后PostUp、PostDown、ListenPort、MTU可以先保持不动，这里需要注意要放通lighthouse相关的安全组。<br>最后我们定义了两个客户端，如果你只有一个就删掉一个，在PublicKey这里填写客户端的公钥，AllowedIPs表示的是那些IP通过这个节点作为网关出去(我感觉这个应该叫Route)，服务启动的时候会创建相关的路由表，可以使用<code>ip route</code> 查看， 这里我用了一个我的内网IP，想让它把内网IP转发到第一个Peer，从而实现跳板机的功能。</p>
+<h3 id="四、启动服务"><a href="#四、启动服务" class="headerlink" title="四、启动服务"></a>四、启动服务</h3><p>执行以下命令将会读取<code>wg0.conf</code>文件，并启动服务</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wg-quick up wg0</span><br></pre></td></tr></table></figure>
+<p>启动成功后我们可以通过<code>ip route</code> 看看机器的路由表：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">10.5.1.11 dev wg0 scope link </span><br><span class="line">10.5.1.12 dev wg0 scope link </span><br><span class="line">192.168.2.0/24 dev wg0 scope link</span><br></pre></td></tr></table></figure>
+<p>可以看到我们配置IP都通过<code>wg0</code>网卡出去。</p>
+<h3 id="五、配置客户端"><a href="#五、配置客户端" class="headerlink" title="五、配置客户端"></a>五、配置客户端</h3><p>在内网客户端上安装WireGuard（步骤一），创建<code>gateway.conf</code>:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[Interface]</span><br><span class="line">PrivateKey = xxx</span><br><span class="line">Address = 10.5.1.11 </span><br><span class="line">MTU = 820</span><br><span class="line"></span><br><span class="line">[Peer]</span><br><span class="line">PublicKey = xxx</span><br><span class="line">AllowedIPs = 10.5.1.0/24 </span><br><span class="line">Endpoint = lighthouse_ip:50814 </span><br></pre></td></tr></table></figure>
+<p>将PrivateKey改为第二步生成的<code>client1.key</code>的内容（节点的私钥），PublicKey改为第二步生成的<code>server.key.pub</code>的内容（对端的公钥），AllowedIPs使用<code>10.5.1.0/24</code>网段，表示<code>10.5.1.0/24</code>走这个接口， 最后将Endpoint改为lighthouse的公网IP（注意放通UDP端口）。<br>另外，这里可以使用我做的<a target="_blank" rel="noopener" href="https://github.com/cocofhu/wireguard-proxy">docker镜像</a>，不过配置文件请用<code>wg0.conf</code>, 具体参看项目说明。</p>
+<h3 id="六、测试"><a href="#六、测试" class="headerlink" title="六、测试"></a>六、测试</h3><p>在局域网节点执行ping命令：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ping 10.5.1.1</span><br></pre></td></tr></table></figure>
+<p>网络畅通表示配置成功，也可以用<code>wg show</code> 查看节点状态。</p>
+<h3 id="七、开启网卡转发实现跳板机相关功能"><a href="#七、开启网卡转发实现跳板机相关功能" class="headerlink" title="七、开启网卡转发实现跳板机相关功能"></a>七、开启网卡转发实现跳板机相关功能</h3><p>使用刚刚client作为内网中转节点，开启转发，这里我的物理网卡是enp1s0：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">允许从物理网卡(enp1s0)进入，转发到gateway虚拟接口的流量</span></span><br><span class="line">iptables -A FORWARD -i enp1s0 -o gateway -j ACCEPT</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">允许从gateway虚拟接口进入，转发到物理网卡(enp1s0)的流量</span></span><br><span class="line">iptables -A FORWARD -i gateway -o enp1s0 -j ACCEPT</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">对从物理网卡(enp1s0)流出的数据进行源地址伪装</span></span><br><span class="line">iptables -t nat -A POSTROUTING -o enp1s0 -j MASQUERADE</span><br></pre></td></tr></table></figure>
+<p>执行上面命令后就可以通过lighthouse直接ssh 192.168.2.x连接上内网机器了。</p>
+<h3 id="八、更多用户接入开黑"><a href="#八、更多用户接入开黑" class="headerlink" title="八、更多用户接入开黑"></a>八、更多用户接入开黑</h3><p>如果需要更多用户接入可以创建更多的client、接入到整改局域网，不同的系统可以通过WireGuard提供的客户端接入。</p>
+<h3 id="九、Troubleshooting"><a href="#九、Troubleshooting" class="headerlink" title="九、Troubleshooting"></a>九、Troubleshooting</h3><h4 id="1、大文件传输失败、延迟巨高，丢包严重"><a href="#1、大文件传输失败、延迟巨高，丢包严重" class="headerlink" title="1、大文件传输失败、延迟巨高，丢包严重"></a>1、大文件传输失败、延迟巨高，丢包严重</h4><ul>
+<li>可以调整MTU，在测试移动网络和电信网络组网时，使用默认的1420有问题，调小MTU时问题得到解决，具体原因可以百度或者问AI。</li>
+</ul>
+<h4 id="2、连接不上"><a href="#2、连接不上" class="headerlink" title="2、连接不上"></a>2、连接不上</h4><ul>
+<li>放通lighthouse的相关端口，检查相关密钥是否弄混了。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2024/05/14/%E4%BD%BF%E7%94%A8GitHub+Hexo%E9%83%A8%E7%BD%B2%E5%8D%9A%E5%AE%A2/" rel="prev" title="使用GitHub+Hexo部署博客">
+                  <i class="fa fa-angle-left"></i> 使用GitHub+Hexo部署博客
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/06/28/%E6%9E%84%E9%80%A0%E6%98%A0%E5%B0%84/" rel="next" title="构造映射">
+                  构造映射 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">cocofhu</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+
+</body>
+</html>
